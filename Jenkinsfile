@@ -2,8 +2,8 @@ pipeline {
     agent { label "Jenkins-Agent" }
     
     parameters {
-    string(name: 'IMAGE_TAG', defaultValue: "${env.BUILD_NUMBER}", description: 'The image tag to deploy')
-}
+        string(name: 'IMAGE_TAG', defaultValue: "${env.BUILD_NUMBER}", description: 'The image tag to deploy')
+    }
 
     environment {
         APP_NAME    = "accounting-app"
@@ -19,18 +19,12 @@ pipeline {
                 cleanWs()
             }
         }
-
-        // ==========================================
-        // CI PIPELINE (Build & Scan Application)
-        // ==========================================
         
         stage("Checkout App Code") {
             steps {
                 git branch: 'main', credentialsId: 'github', url: "${CI_REPO_URL}"
             }
         }
-
-        // [Insert the Build and Test stages here]
 
         stage("Build Docker Image") {
             steps {
@@ -54,18 +48,14 @@ pipeline {
 
         stage("Push Docker Image") {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER_CRED')]) {
                     sh """
-                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER_CRED" --password-stdin
                         docker push ${IMAGE_NAME}
                     """
                 }
             }
         }
-
-        // ==========================================
-        // CD PIPELINE (GitOps Manifest Update)
-        // ==========================================
         
         stage("Update GitOps Manifest") {
             steps {
@@ -106,7 +96,19 @@ pipeline {
                         git push origin main
                     """
                 }
+            }   
+        } // <--- CLOSED THE PUSH STAGE HERE
+
+        stage('Trigger GitOps CD Pipeline') {
+            steps {
+                echo "Triggering downstream job: gitops-register-app-cd"
+                build job: 'gitops-register-app-cd', 
+                    wait: false, 
+                    parameters: [
+                        string(name: 'IMAGE_TAG', value: "${params.IMAGE_TAG}")
+                    ]
             }
         }
+
     }
 }
