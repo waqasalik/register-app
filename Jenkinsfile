@@ -2,7 +2,8 @@ pipeline {
     agent { label "Jenkins-Agent" }
     
     parameters {
-        string(name: 'IMAGE_TAG', defaultValue: "${env.BUILD_NUMBER}", description: 'The image tag to deploy')
+        // Leave this blank. If triggered by another job, it will pass a value here.
+        string(name: 'IMAGE_TAG', defaultValue: '', description: 'Leave empty to use BUILD_NUMBER')
     }
 
     environment {
@@ -10,7 +11,10 @@ pipeline {
         DOCKER_USER = "waqaszai"
         REPO_URL    = "https://github.com/waqasalik/register-app"
         CI_REPO_URL = "https://github.com/waqasalik/Accounting-app.git"
-        IMAGE_NAME  = "${DOCKER_USER}/${APP_NAME}:${params.IMAGE_TAG}"
+        
+        // FIX: If IMAGE_TAG is empty, fallback to the Build Number. Otherwise use IMAGE_TAG.
+        FINAL_TAG   = "${params.IMAGE_TAG ?: env.BUILD_NUMBER}"
+        IMAGE_NAME  = "${DOCKER_USER}/${APP_NAME}:${FINAL_TAG}"
     }
 
     stages {
@@ -36,13 +40,11 @@ pipeline {
 
         stage('Trivy Scan') {
             steps {
-                sh '''
-                    # THE FIX: Redirect Trivy's temp directory to the workspace to avoid "no space left on device"
-                    export TMPDIR="$(pwd)/.trivytmp"
-                    mkdir -p "$TMPDIR"
-                    
+                sh """
+                    export TMPDIR="\$(pwd)/.trivytmp"
+                    mkdir -p "\$TMPDIR"
                     trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}
-                '''
+                """
             }
         }
 
@@ -60,14 +62,14 @@ pipeline {
         stage("Update GitOps Manifest") {
             steps {
                 sh """
-                    echo "Updating deployment to tag: ${params.IMAGE_TAG}"
+                    echo "Updating deployment to tag: ${FINAL_TAG}"
                     
                     # Clone the GitOps repo into a sub-folder
                     git clone https://github.com/waqasalik/register-app.git gitops-repo
                     cd gitops-repo
 
                     # Update the image tag
-                    sed -i 's|image: ${DOCKER_USER}/${APP_NAME}:.*|image: ${DOCKER_USER}/${APP_NAME}:${params.IMAGE_TAG}|g' deployment.yaml
+                    sed -i 's|image: ${DOCKER_USER}/${APP_NAME}:.*|image: ${DOCKER_USER}/${APP_NAME}:${FINAL_TAG}|g' deployment.yaml
                     
                     # Show the change
                     cat deployment.yaml
@@ -79,17 +81,12 @@ pipeline {
             steps {
                 sh """
                     cd gitops-repo
-                    
-                    # Configure Git user
                     git config --global user.name "waqasalik"
                     git config --global user.email "waqasalikhan086@gmail.com" 
-                    
-                    # Commit the change
                     git add deployment.yaml
-                    git commit -m "Update image tag to ${params.IMAGE_TAG} [ci skip]" || echo "No changes to commit"
+                    git commit -m "Update image tag to ${FINAL_TAG} [ci skip]" || echo "No changes to commit"
                 """
                 
-                // Use the credential to push securely
                 withCredentials([gitUsernamePassword(credentialsId: 'github', gitToolName: 'Default')]) {
                     sh """
                         cd gitops-repo
@@ -97,7 +94,7 @@ pipeline {
                     """
                 }
             }   
-        } // <--- CLOSED THE PUSH STAGE HERE
+        } 
 
         stage('Trigger GitOps CD Pipeline') {
             steps {
@@ -105,10 +102,9 @@ pipeline {
                 build job: 'gitops-register-app-cd', 
                     wait: false, 
                     parameters: [
-                        string(name: 'IMAGE_TAG', value: "${params.IMAGE_TAG}")
+                        string(name: 'IMAGE_TAG', value: "${FINAL_TAG}")
                     ]
             }
         }
-
     }
 }
