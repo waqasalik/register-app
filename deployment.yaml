@@ -27,7 +27,7 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-         readinessProbe:
+          readinessProbe:
             httpGet:
               path: /health
               port: 5000
