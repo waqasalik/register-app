@@ -38,12 +38,19 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan') {
+                stage('Trivy Scan') {
             steps {
                 sh """
-                    export TMPDIR="\$(pwd)/.trivytmp"
-                    mkdir -p "\$TMPDIR"
-                    trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}
+                    echo "Running Trivy scan via Docker..."
+                    
+                    # Create a local directory for Trivy's cache to avoid disk space issues
+                    mkdir -p trivy-cache
+                    
+                    # Run Trivy inside a Docker container, mounting the local Docker socket
+                    docker run --rm \\
+                        -v /var/run/docker.sock:/var/run/docker.sock \\
+                        -v \$(pwd)/trivy-cache:/root/.cache/ \\
+                        aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}
                 """
             }
         }
