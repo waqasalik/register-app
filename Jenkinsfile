@@ -38,14 +38,14 @@ pipeline {
             }
         }
          stage('Trivy Scan') {
-             steps {
-                 sh """
+    steps {
+        sh """
             echo "Running Trivy scan via Docker..."
             mkdir -p trivy-cache
             docker run --rm \\
                 -v /var/run/docker.sock:/var/run/docker.sock \\
                 -v \$(pwd)/trivy-cache:/root/.cache/ \\
-                aquasec/trivy:latest image --skip-java-db-update --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}
+                aquasec/trivy:latest image --scanners vuln --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}
         """
     }
 }
