@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: accounting-app
-          image: <your-dockerhub-username>/accounting-app:1.0.0-1
+          image: waqaszai/accounting-app:1.0.0-18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
