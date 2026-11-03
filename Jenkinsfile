@@ -37,7 +37,7 @@ pipeline {
                 """
             }
         }
-         sstage('Trivy Scan') {
+         stage('Trivy Scan') {
     steps {
         sh """
             echo "Running Trivy scan via Docker..."
