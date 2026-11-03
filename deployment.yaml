@@ -19,7 +19,7 @@ spec:
           image: waqaszai/accounting-app:1.0.0-18
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - containerPort: 5000
           resources:
             requests:
               memory: "128Mi"
@@ -30,6 +30,6 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 8080
+              port: 5000
             initialDelaySeconds: 20
             periodSeconds: 10
