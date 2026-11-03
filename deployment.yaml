@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting-app-deployment
+  labels:
+    app: accounting-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: accounting-app
+  template:
+    metadata:
+      labels:
+        app: accounting-app
+    spec:
+      containers:
+        - name: accounting-app
+          image: <your-dockerhub-username>/accounting-app:1.0.0-1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
