@@ -2,8 +2,8 @@ pipeline {
     agent { label "Jenkins-Agent" }
     
     parameters {
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'The image tag to deploy')
-    }
+    string(name: 'IMAGE_TAG', defaultValue: "${env.BUILD_NUMBER}", description: 'The image tag to deploy')
+}
 
     environment {
         APP_NAME    = "accounting-app"
