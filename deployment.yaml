@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: accounting-app
-          image: waqaszai/accounting-app:51
+          image: waqaszai/accounting-app:63
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
