@@ -37,7 +37,7 @@ pipeline {
                 """
             }
         }
-         sstage('Trivy Scan') {
+         stage('Trivy Scan') {
     steps {
         sh """
         mkdir -p /home/ubuntu/trivy-cache
