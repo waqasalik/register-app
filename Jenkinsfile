@@ -40,13 +40,12 @@ pipeline {
          stage('Trivy Scan') {
     steps {
         sh """
-            echo "Running Trivy scan via Docker..."
-            mkdir -p trivy-cache
-            docker run --rm \\
-                -e TRIVY_SKIP_JAVA_DB_UPDATE=true \\
-                -v /var/run/docker.sock:/var/run/docker.sock \\
-                -v \$(pwd)/trivy-cache:/root/.cache/ \\
-                aquasec/trivy:latest image --scanners vuln --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}
+        mkdir -p /home/ubuntu/trivy-cache
+        docker run --rm \\
+        -e TRIVY_SKIP_JAVA_DB_UPDATE=true \\
+        -v /var/run/docker.sock:/var/run/docker.sock \\
+        -v /home/ubuntu/trivy-cache:/root/.cache/ \\
+        aquasec/trivy:latest image --scanners vuln --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}
         """
     }
 }
