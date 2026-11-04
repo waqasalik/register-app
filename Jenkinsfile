@@ -95,16 +95,3 @@ pipeline {
                 }
             }   
         } 
-
-        stage('Trigger GitOps CD Pipeline') {
-            steps {
-                echo "Triggering downstream job: gitops-register-app-cd"
-                build job: 'gitops-register-app-cd', 
-                    wait: false, 
-                    parameters: [
-                        string(name: 'IMAGE_TAG', value: "${FINAL_TAG}")
-                    ]
-            }
-        }
-    }
-}
